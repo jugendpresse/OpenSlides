@@ -89,7 +89,7 @@ node {
                     echo 'Building Image "' + image_string + '"'
 
                     dir( contexts[ version ][ 'context' ] ) {
-                        built_image = docker.build( image_string, '-f - . < ' + contexts[ version ][ 'dockerfile' ] )
+                        built_image = docker.build( image_string, '-f - . < ./' + contexts[ version ][ 'dockerfile' ] )
                         withCredentials([usernamePassword( credentialsId: 'jpdtechnicaluser', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                             docker.withRegistry('', 'jpdtechnicaluser') {
                                 sh "docker login -u ${USERNAME} -p ${PASSWORD}"
