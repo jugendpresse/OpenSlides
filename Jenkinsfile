@@ -89,12 +89,13 @@ node {
                 sh 'cd app && git checkout ' + build_tags[i]
 
                 for ( int j = 0; j < versions.size(); j++ ) {
-                    def version = versions[j]
-                    echo 'Building Image "' + image + ':' + version + '_' + build_tags[i] + '"'
+                    def version      = versions[j]
+                    def image_string = image + ':' + version + '_' + build_tags[i]
+                    echo 'Building Image "' + image_string + '"'
 
-                    sh 'cd ' + cur_dir ' && cd ' + contexts[ version ][ 'context' ]
+                    sh "cd ${cur_dir} && cd " + contexts[ version ][ 'context' ]
 
-                    built_image = docker.build(image + ':' + version + '_' + build_tags[i], '-f ' + contexts[ version ][ 'dockerfile' ] )
+                    built_image = docker.build( image_string, '-f ' + contexts[ version ][ 'dockerfile' ] )
                     withCredentials([usernamePassword( credentialsId: 'jpdtechnicaluser', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         docker.withRegistry('', 'jpdtechnicaluser') {
                             sh "docker login -u ${USERNAME} -p ${PASSWORD}"
@@ -130,7 +131,7 @@ node {
                     'git config user.name Jenkins && ' +
                     'git config user.email server@jugendpresse.de && ' +
                     'git add built_tags.json && ' +
-                    'git commit -m "Jenkins: automated build from ' + built_tags[build_tags[ build_tags.length - 1 ]] + '" &&' +
+                    'git commit -m "Jenkins: automated build from ' + built_tags[build_tags[ build_tags.length - 1 ]] + '" && ' +
                     'git push https://${GIT_USERNAME}:${GIT_PASSWORD}@' + scm_repo + ' HEAD:' + scm_branch
                 )
             }
