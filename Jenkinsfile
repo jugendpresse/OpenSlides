@@ -69,6 +69,11 @@ node {
         def vtag
         int ind
 
+        cur_dir = sh(
+                        script: 'pwd',
+                        returnStdout: true
+                    )
+
         for ( int i = 0; i < build_tags.size(); i++ ) {
 
             vtag = ''
@@ -81,36 +86,36 @@ node {
 
                 echo "Tag " + build_tags[i] + " to be built now."
                 scm_push = true
-                sh 'cd app && git checkout ' + build_tags[i] + ' && cd ..'
+                sh 'cd app && git checkout ' + build_tags[i]
 
                 for ( int j = 0; j < versions.size(); j++ ) {
                     def version = versions[j]
-                    echo image + ':' + version + '_' + build_tags[i]
+                    echo 'Building Image "' + image + ':' + version + '_' + build_tags[i] + '"'
 
-                    // built_image = docker.build(image + ':' + version + '_' + build_tags[i])
-                    // withCredentials([usernamePassword( credentialsId: 'jpdtechnicaluser', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                    //     docker.withRegistry('', 'jpdtechnicaluser') {
-                    //         sh "docker login -u ${USERNAME} -p ${PASSWORD}"
-                    //         built_image.push()
-                    //         if (build_tags[i] =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/) {
-                    //             ind = build_tags[i].lastIndexOf(".")
-                    //             vtag = build_tags[i]
-                    //             while ( ind > 0 ) {
-                    //                 vtag = new StringBuilder(vtag).substring(0, ind).toString()
-                    //                 built_image.push(vtag)
-                    //                 ind = vtag.lastIndexOf(".")
-                    //             }
-                    //             built_image.push(version)
-                    //         }
-                    //     }
-                    // }
+                    sh 'cd ' + cur_dir ' && cd ' + contexts[ version ][ 'context' ]
+
+                    built_image = docker.build(image + ':' + version + '_' + build_tags[i], '-f ' + contexts[ version ][ 'dockerfile' ] )
+                    withCredentials([usernamePassword( credentialsId: 'jpdtechnicaluser', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        docker.withRegistry('', 'jpdtechnicaluser') {
+                            sh "docker login -u ${USERNAME} -p ${PASSWORD}"
+                            built_image.push()
+                            if (build_tags[i] =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/) {
+                                ind = build_tags[i].lastIndexOf(".")
+                                vtag = build_tags[i]
+                                while ( ind > 0 ) {
+                                    vtag = new StringBuilder(vtag).substring(0, ind).toString()
+                                    built_image.push(vtag)
+                                    ind = vtag.lastIndexOf(".")
+                                }
+                                built_image.push(version)
+                            }
+                        }
+                    }
 
                     built_image = null
                 }
 
                 def now = new Date()
-                // echo build_tags[i]
-                // echo now.format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone('Europe/Berlin'))
                 built_tags[build_tags[i]] = now.format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone('Europe/Berlin'))
             }
         }
@@ -120,15 +125,15 @@ node {
         sh 'rm -rf app/'
         if (scm_push) {
             writeJSON file: 'built_tags.json', json: built_tags, pretty: 4
-    //         withCredentials([usernamePassword(credentialsId: 'jpdtechnicaluser', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-    //             sh(
-    //                 'git config user.name Jenkins && ' +
-    //                 'git config user.email server@jugendpresse.de && ' +
-    //                 'git add built_tags.json && ' +
-    //                 'git commit -m "Jenkins: automated build from ' + built_tags[build_tags[ build_tags.length - 1 ]] + '" &&' +
-    //                 'git push https://${GIT_USERNAME}:${GIT_PASSWORD}@' + scm_repo + ' HEAD:' + scm_branch
-    //             )
-    //         }
+            withCredentials([usernamePassword(credentialsId: 'jpdtechnicaluser', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                sh(
+                    'git config user.name Jenkins && ' +
+                    'git config user.email server@jugendpresse.de && ' +
+                    'git add built_tags.json && ' +
+                    'git commit -m "Jenkins: automated build from ' + built_tags[build_tags[ build_tags.length - 1 ]] + '" &&' +
+                    'git push https://${GIT_USERNAME}:${GIT_PASSWORD}@' + scm_repo + ' HEAD:' + scm_branch
+                )
+            }
         }
     }
 }
