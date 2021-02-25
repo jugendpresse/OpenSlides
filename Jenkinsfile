@@ -88,6 +88,8 @@ node {
                     def image_string = image + ':' + version + '_' + build_tags[i]
                     echo 'Building Image "' + image_string + '"'
 
+                    sh 'tree'
+
                     dir( contexts[ version ][ 'context' ] ) {
 
                         sh 'ls -lah'
