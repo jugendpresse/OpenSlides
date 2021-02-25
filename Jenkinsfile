@@ -90,10 +90,8 @@ node {
 
                     dir( contexts[ version ][ 'context' ].trim() ) {
 
-                        sh 'ls -lah'
-                        sh 'pwd'
-
                         def df = contexts[ version ][ 'dockerfile' ]
+                        sh "ls -lah ${df}"
 
                         built_image = docker.build( image_string, "-f - . < ${df}" )
                         withCredentials([usernamePassword( credentialsId: 'jpdtechnicaluser', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
