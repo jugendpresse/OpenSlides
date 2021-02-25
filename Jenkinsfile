@@ -91,6 +91,7 @@ node {
                     dir( contexts[ version ][ 'context' ].trim() ) {
 
                         def df = contexts[ version ][ 'dockerfile' ]
+                        sh "ls -lha docker"
                         sh "ls -lah ${df}"
 
                         built_image = docker.build( image_string, "-f - . < ${df}" )
