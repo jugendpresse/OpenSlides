@@ -69,11 +69,6 @@ node {
         def vtag
         int ind
 
-        cur_dir = sh(
-                        script: 'pwd',
-                        returnStdout: true
-                    )
-
         for ( int i = 0; i < build_tags.size(); i++ ) {
 
             vtag = ''
@@ -86,34 +81,34 @@ node {
 
                 echo "Tag " + build_tags[i] + " to be built now."
                 scm_push = true
-                sh 'cd app && git checkout ' + build_tags[i]
+                sh 'cd app && git checkout ' + build_tags[i] + ' && cd ..'
 
                 for ( int j = 0; j < versions.size(); j++ ) {
                     def version      = versions[j]
                     def image_string = image + ':' + version + '_' + build_tags[i]
                     echo 'Building Image "' + image_string + '"'
 
-                    sh "cd \"${cur_dir}\" && cd \"" + contexts[ version ][ 'context' ] + "\""
-
-                    built_image = docker.build( image_string, '-f ' + contexts[ version ][ 'dockerfile' ] )
-                    withCredentials([usernamePassword( credentialsId: 'jpdtechnicaluser', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                        docker.withRegistry('', 'jpdtechnicaluser') {
-                            sh "docker login -u ${USERNAME} -p ${PASSWORD}"
-                            built_image.push()
-                            if (build_tags[i] =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/) {
-                                ind = build_tags[i].lastIndexOf(".")
-                                vtag = build_tags[i]
-                                while ( ind > 0 ) {
-                                    vtag = new StringBuilder(vtag).substring(0, ind).toString()
-                                    built_image.push(vtag)
-                                    ind = vtag.lastIndexOf(".")
+                    dir( contexts[ version ][ 'context' ] ) {
+                        built_image = docker.build( image_string, '-f ' + contexts[ version ][ 'dockerfile' ] )
+                        withCredentials([usernamePassword( credentialsId: 'jpdtechnicaluser', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                            docker.withRegistry('', 'jpdtechnicaluser') {
+                                sh "docker login -u ${USERNAME} -p ${PASSWORD}"
+                                built_image.push()
+                                if (build_tags[i] =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/) {
+                                    ind = build_tags[i].lastIndexOf(".")
+                                    vtag = build_tags[i]
+                                    while ( ind > 0 ) {
+                                        vtag = new StringBuilder(vtag).substring(0, ind).toString()
+                                        built_image.push(vtag)
+                                        ind = vtag.lastIndexOf(".")
+                                    }
+                                    built_image.push(version)
                                 }
-                                built_image.push(version)
                             }
                         }
-                    }
 
-                    built_image = null
+                        built_image = null
+                    }
                 }
 
                 def now = new Date()
