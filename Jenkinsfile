@@ -5,7 +5,7 @@ node {
 
     def gitrepository = 'https://github.com/OpenSlides/OpenSlides.git'
     def gitbranch     = 'master'
-    def begin_commit  = '534f2d1'
+    def begin_commit  = 'a37e219'
 
     def built_tags = []
     def build_tags = []
