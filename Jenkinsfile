@@ -93,7 +93,7 @@ node {
                     def image_string = image + ':' + version + '_' + build_tags[i]
                     echo 'Building Image "' + image_string + '"'
 
-                    sh "cd ${cur_dir} && cd " + contexts[ version ][ 'context' ]
+                    sh "cd \"${cur_dir}\" && cd \"" + contexts[ version ][ 'context' ] + "\""
 
                     built_image = docker.build( image_string, '-f ' + contexts[ version ][ 'dockerfile' ] )
                     withCredentials([usernamePassword( credentialsId: 'jpdtechnicaluser', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
