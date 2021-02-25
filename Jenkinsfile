@@ -88,11 +88,11 @@ node {
                     def image_string = image + ':' + version + '_' + build_tags[i]
                     echo 'Building Image "' + image_string + '"'
 
-                    dir( contexts[ version ][ 'context' ] ) {
+                    dir( contexts[ version ][ 'context' ].trim() ) {
 
                         sh 'ls -lah'
                         sh 'pwd'
-                        sh 'tree'
+                        // sh 'tree'
 
                         built_image = docker.build( image_string, '-f - . < ./' + contexts[ version ][ 'dockerfile' ] )
                         withCredentials([usernamePassword( credentialsId: 'jpdtechnicaluser', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
